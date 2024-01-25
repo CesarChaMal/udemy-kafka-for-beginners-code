@@ -1,0 +1,72 @@
+sudo apt install curl
+sudo apt install zip
+sudo apt install unzip
+curl -s "https://get.sdkman.io" | bash && source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk list java
+sdk install java 11.0.21-amzn
+sdk use java 11.0.21-amzn
+java -version
+
+wget https://downloads.apache.org/kafka/3.6.1/kafka_2.12-3.6.1.tgz
+tar -xzf kafka_2.12-3.6.1.tgz
+
+sudo mv kafka_2.12-3.6.1 /usr/local/kafka
+sudo mv kafka_2.12-3.6.1 ~/kafka
+
+cp /usr/local/kafka/config/kraft/server.properties /usr/local/kafka/config/server.properties
+cp ~/kafka/config/kraft/server.properties ~/kafka/config/server.properties
+
+vi /usr/local/kafka/config/server.properties
+vi ~/kafka/config/server.properties
+
+export PATH="$PATH:/usr/local/kafka/bin"
+export PATH="$PATH:~/kafka/bin"
+export PATH="$PATH:/root/kafka/bin"
+
+echo "export PATH=\"\$PATH:/root/kafka/bin\"" | sudo tee -a /root/.bashrc
+tail ~/.bashrc
+source ~/.bashrc
+
+uuidgen
+echo -n a12e85ff89b94d0d837b67fe5218961c | xxd -r -p | base64
+echo -n a12e85ff89b94d0d837b67fe5218961c | xxd -r -p | base64 | tr '/+' '_-'
+
+echo -n $(uuidgen) | xxd -r -p | base64 | tr '/+' '_-'
+uid=$(echo -n $(uuidgen) | xxd -r -p | base64 | tr '/+' '_-')
+
+-- or
+
+uid=$(kafka-storage.sh random-uuid)
+
+------- with zookepper
+
+zookeeper-server-start.sh /usr/local/kafka/config/zookeeper.properties
+zookeeper-server-start.sh ~/kafka/config/zookeeper.properties
+
+---------------
+
+kafka-storage.sh format -t oS6F_4m5TQ2De2f-UhiWHA== -c /usr/local/kafka/config/server.properties
+kafka-storage.sh format -t oS6F_4m5TQ2De2f-UhiWHA== -c ~/kafka/config/server.properties
+
+kafka-storage.sh format -t $uid -c /usr/local/kafka/config/server.properties
+kafka-storage.sh format -t $uid -c ~/kafka/config/server.properties
+
+kafka-server-start.sh /usr/local/kafka/config/server.properties
+kafka-server-start.sh ~/kafka/config/server.properties
+
+nohup kafka-server-start.sh ~/kafka/config/server.properties > ~/kafka/kafka-server.log 2>&1 &
+nohup /root/kafka/bin/kafka-server-start.sh /root/kafka/config/server.properties > /root/kafka/kafka-server.log 2>&1 &
+
+cat ~/kafka/kafka-server.log
+less ~/kafka/kafka-server.log
+tail ~/kafka/kafka-server.log
+tail -f ~/kafka/kafka-server.log
+
+-- Verifying the Installation
+
+ps -ef | grep kafka
+netstat -tulnp | grep 9092
+
+kafka-topics.sh --create --topic test --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+kafka-console-producer.sh --broker-list localhost:9092 --topic test
+kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
